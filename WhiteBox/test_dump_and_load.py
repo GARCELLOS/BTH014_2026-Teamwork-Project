@@ -108,6 +108,15 @@ class TestDumpAndLoad(unittest.TestCase):
             data = marshal.load(file)
         self.assertEqual(data, value)
 
+    def test_dump_and_load_frozenset_empty(self):
+        """Test empty frozen dump and load result"""
+        value = frozenset()
+        with open(tempfile_dir, "wb") as file:
+            marshal.dump(value, file, 5)
+        with open(tempfile_dir, "rb") as file:
+            data = marshal.load(file)
+        self.assertEqual(data, value)
+
     def test_dump_and_load_code(self):
         """Test code dump and load result"""
         value = compile("def func(x): return x", "test", "exec")

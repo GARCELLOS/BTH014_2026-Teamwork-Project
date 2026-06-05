@@ -1,3 +1,4 @@
+import marshal
 import unittest
 import os
 # please run genrateFloat_Complex_UTF8_smalltuple
@@ -67,6 +68,29 @@ class TestDump(unittest.TestCase):
                   "rb") as file:
             data0 = file.read()
         self.assertEqual(data5, data0)
+
+    def test_dump_longint(self):
+        """Test long int in marshal5 and marshal0
+        value = 4294967295
+        """
+        with open(os.path.join(tempfile_dir,
+                               "python_3.14_marshal_5_longint.pyc"),
+                  "rb") as file:
+            data5 = file.read()
+        with open(os.path.join(tempfile_dir,
+                               "python_2.3_marshal_0_longint.pyc"),
+                  "rb") as file:
+            data0 = file.read()
+        self.assertEqual(data5, data0)
+
+    def test_dump_and_load_int64(self):
+        """Test if int64 can be loaded"""
+        value = 4294967295
+        with open(os.path.join(tempfile_dir,
+                               "python_2.3_marshal_0_longint.pyc"),
+                  "rb") as file:
+            data = marshal.load(file)
+        self.assertEqual(value, data)
 
 
 if __name__ == "__main__":

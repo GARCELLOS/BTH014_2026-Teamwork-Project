@@ -1,7 +1,6 @@
-import marshal
 import unittest
 import os
-# please run generate.py on both linux and windows platform before testing
+# please run generate_int.py on both linux and windows platform before testing
 script_dir = os.path.dirname(os.path.abspath(__file__))
 tempfile_dir = os.path.join(script_dir, "temp")
 
