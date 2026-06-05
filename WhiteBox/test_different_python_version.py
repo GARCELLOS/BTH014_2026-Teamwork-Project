@@ -1,7 +1,7 @@
 import marshal
 import unittest
 import os
-# please run genrateFloat_Complex_UTF8_smalltuple
+# please run genrateFloat_Complex_UTF8_smalltuple_longint.py
 # on both python3.14 and py2.3 before testing
 script_dir = os.path.dirname(os.path.abspath(__file__))
 tempfile_dir = os.path.join(script_dir, "temp")
