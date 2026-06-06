@@ -63,12 +63,14 @@ uv run python run_marshal_tests.py --all --compare-after
 
 | 组名 | 数据文件 | 条数 | ID 前缀 | 说明 |
 |------|----------|------|---------|------|
-| `basic` | `cases/basic.py` | 33 | `BASIC-` | None、数值、字符串、bytes、float、单例等 |
-| `container` | `cases/container.py` | 31 | `CONTAINER-` | list / tuple / dict / set / slice 等 |
-| `complexity` | `cases/complexity.py` | 34 | `COMPLEXITY-` | 深层嵌套、大容器、共享引用等 |
-| `code` | `cases/code.py` | 22 | `CODE-` | 函数、闭包、生成器、控制流等 Code 对象 |
-| `nested` | `cases/structure.py` | 24 | `NEST-` | 混合嵌套、深层边界、大对象等 |
-| `cycle` | `cases/structure.py` | 14 | `CYCLE-` | 自引用、互引用、循环图等 |
+| `basic` | `cases/basic.py` | 33 | `EQ-basic-001` ~ `EQ-basic-033` | None、布尔、整数、字符串、bytes、float、复数、bytearray、单例 |
+| `container` | `cases/container.py` | 31 | `EQ-container-034` ~ `EQ-container-064` | list / tuple / dict / set / frozenset / slice |
+| `complexity` | `cases/complexity.py` | 34 | `EQ-complexity-065` ~ `EQ-complexity-098` | 深层嵌套、大容器、共享引用等 |
+| `code` | `cases/code.py` | 22 | `EQ-code-099` ~ `EQ-code-120` | 函数、闭包、生成器、async、lambda、控制流等 Code 对象 |
+| `nested` | `cases/structure.py` | 24 | `EQ-nested-121` ~ `EQ-nested-144` | 混合嵌套、深层边界、大对象等 |
+| `cycle` | `cases/structure.py` | 14 | `EQ-cycle-145` ~ `EQ-cycle-158` | 自引用、互引用、循环图等 |
+
+> 用例 ID 格式为 `EQ-{group}-{NNN}`，如 `EQ-basic-001`、`EQ-container-034`、`EQ-code-099`。NNN 为全局三位数流水号（001–158）。
 
 辅助构造函数在 `cases/builders.py`（如 `make_nested_list`）。
 
@@ -121,7 +123,7 @@ uv run python run_marshal_tests.py --all-groups
 | `MARSHAL_TEST_REPEAT` | 普通组默认重复次数（默认 **10**） |
 | `MARSHAL_HEAVY_REPEAT` | 重量级组默认重复（默认 **1**） |
 | `MARSHAL_COMPLEXITY_REPEAT` | 同 `MARSHAL_HEAVY_REPEAT`（兼容旧名） |
-| `--only BASIC-01,NEST-01` | 只跑列出的用例 ID（逗号分隔，不区分大小写） |
+| `--only EQ-basic-001,EQ-nested-121` | 只跑列出的用例 ID（逗号分隔，不区分大小写） |
 | `--filter slice` | 只跑 ID 或名称包含该文本的用例 |
 | `--compare` | 根据已有版本 CSV 生成 pivot 表 |
 | `--compare-after` | `--all` / `--target` 结束后自动生成 pivot |
@@ -133,12 +135,12 @@ uv run python run_marshal_tests.py --all-groups
 ```powershell
 uv run python run_marshal_tests.py basic --quick
 uv run python run_marshal_tests.py complexity
-uv run python run_marshal_tests.py code --quick --only CODE-01
-uv run python run_marshal_tests.py nested --quick --only NEST-01
-uv run python run_marshal_tests.py cycle --quick --only CYCLE-01
+uv run python run_marshal_tests.py code --quick --only EQ-code-099
+uv run python run_marshal_tests.py nested --quick --only EQ-nested-121
+uv run python run_marshal_tests.py cycle --quick --only EQ-cycle-145
 uv run python run_marshal_tests.py container --filter slice --quick
 uv run python run_marshal_tests.py --all-groups --quick
-uv run python run_marshal_tests.py --current --only BASIC-01,CONTAINER-01 --quick
+uv run python run_marshal_tests.py --current --only EQ-basic-001,EQ-container-059 --quick
 uv run python run_marshal_tests.py --all --compare-after
 uv run python run_marshal_tests.py --compare
 ```
@@ -200,7 +202,8 @@ status -> SUCCESS / EXCEPTION / UNSTABLE
 
 | 字段 | 含义 |
 |------|------|
-| `test_id` | 如 `BASIC-01` |
+| `os_name` | 操作系统名称（Windows / Linux / Darwin） |
+| `test_id` | 如 `EQ-basic-001` |
 | `test_name` | 用例说明 |
 | `input_repr` | 输入的简短 repr（过长会截断） |
 | `status` | `SUCCESS` / `EXCEPTION` / `UNSTABLE` |
@@ -220,6 +223,7 @@ status -> SUCCESS / EXCEPTION / UNSTABLE
 ```json
 {
   "environment": {
+    "os_name": "Windows",
     "python_version": "3.14.5",
     "marshal_version": 5,
     "machine": "...",
@@ -297,7 +301,7 @@ marshal_test/
 
 ### 7.2 新增 / 修改用例
 
-1. 在 `cases/` 对应文件中添加 `(test_id, test_name, value)` 元组。
+1. 在 `cases/` 对应文件中添加 `(test_id, test_name, value)` 元组。test_id 格式为 `EQ-{group}-{NNN}`（如 `EQ-basic-034`、`EQ-container-100`）。NNN 为三位数全局流水号，新增用例接在 158 之后。
 2. 新组需在 `cases/registry.py` 的 `_CASE_SPECS` 中注册。
 3. 若组内用例较大或耗时长，可将组名加入 `config.py` 的 `HEAVY_CASE_GROUPS`。
 4. 运行自检确认无重复 ID：
@@ -326,8 +330,8 @@ uv run python run_marshal_tests.py --all --compare-after
 
 ```powershell
 uv run python self_check.py
-uv run python run_marshal_tests.py basic --quick --only BASIC-01
-uv run python run_marshal_tests.py --current --quick --only NEST-01
+uv run python run_marshal_tests.py basic --quick --only EQ-basic-001
+uv run python run_marshal_tests.py --current --quick --only EQ-nested-121
 ```
 
 **正式交作业 / 交结果**
@@ -349,8 +353,8 @@ uv run python run_marshal_tests.py --all --compare-after
 | Excel 中 `3.10` 显示为 `3.1` | 将该列设为文本，或查看 JSON |
 | 某版本 `SKIPPED` | `uv python install 3.xx` 后重试 |
 | `complexity` / `nested` / `cycle` 很慢 | 重量级组默认 repeat=1；调试加 `--quick` |
-| `NEST-15` 出现 `RecursionError` | 超过 marshal 递归深度限制，属预期异常用例 |
-| `CYCLE-*` 在部分版本失败 | 循环引用序列化行为因版本而异，重点看 `final_result` 是否稳定 |
+| `EQ-nested-135` 出现 `RecursionError` | 超过 marshal 递归深度限制，属预期异常用例 |
+| `EQ-cycle-*` 在部分版本失败 | 循环引用序列化行为因版本而异，重点看 `final_result` 是否稳定 |
 | slice 在 3.10–3.13 异常、3.14 成功 | marshal 格式 v5 差异，属预期对比结果 |
 | `--compare` 无输出 | 需先有 `results/python_versions/marshal_python_*.csv` |
 | `不能同时指定用例组` | 版本模式（`--current` 等）与 `basic` 等组名互斥 |

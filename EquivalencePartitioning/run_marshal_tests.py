@@ -5,6 +5,12 @@ marshal 序列化稳定性测试 — 唯一入口
 import argparse
 import sys
 
+# 确保 Windows 下中文路径能正确显示
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from cases import CASE_GROUP_ORDER, CASE_GROUPS
 from config import HEAVY_CASE_GROUPS, VERSION_TARGETS, RunOptions
 from core.compare_versions import run_version_compare
@@ -14,6 +20,7 @@ from core.version_runner import (
     run_current_python,
     run_selected_target_pythons,
 )
+
 
 def _build_epilog(heavy_repeat: int) -> str:
     groups = ", ".join(CASE_GROUP_ORDER)
@@ -61,7 +68,7 @@ def build_parser():
     parser.add_argument(
         "--only",
         metavar="IDS",
-        help="只跑指定用例，逗号分隔，如 BASIC-01,CONTAINER-26",
+        help="只跑指定用例，逗号分隔，如 EQ-basic-001,EQ-container-034",
     )
     parser.add_argument(
         "--filter",
@@ -75,7 +82,9 @@ def build_parser():
         action="store_true",
         help="uv 切换 3.10–3.14 跑版本对比（不是 --all-groups）",
     )
-    parser.add_argument("--target", nargs="+", metavar="VER", help="指定 Python 版本")
+    parser.add_argument(
+        "--target", nargs="+", metavar="VER", help="指定 Python 版本"
+    )
     parser.add_argument("--version-label", default="CURRENT", help="结果中的版本标签")
     parser.add_argument(
         "--compare",
