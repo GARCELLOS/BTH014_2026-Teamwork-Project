@@ -39,6 +39,8 @@ def check_required_files():
         for name in missing:
             print(f"  - {name}")
         sys.exit(1)
+
+
 def _utf8_env():
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
@@ -58,6 +60,7 @@ def _run_subprocess(cmd, *, cwd=None, capture_output=False):
         env=_utf8_env(),
     )
 
+
 def _runner_script_args(version_label: str, options: RunOptions) -> list[str]:
     args = [
         str(Path(__file__).resolve().parent.parent / "run_marshal_tests.py"),
@@ -76,7 +79,9 @@ def _runner_script_args(version_label: str, options: RunOptions) -> list[str]:
     return args
 
 
-def run_current_python(version_label="CURRENT", options: RunOptions | None = None):
+def run_current_python(
+    version_label="CURRENT", options: RunOptions | None = None
+):
     options = options or RunOptions()
     ensure_version_dirs()
     check_required_files()
@@ -98,7 +103,10 @@ def run_current_python(version_label="CURRENT", options: RunOptions | None = Non
             test_id,
             name,
             value,
-            extra_fields={"version_label": version_label, "case_group": case_group},
+            extra_fields={
+                "version_label": version_label,
+                "case_group": case_group,
+            },
             repeat_count=resolve_repeat_count(case_group, options),
         )
         results.append(result)
@@ -115,8 +123,12 @@ def run_current_python(version_label="CURRENT", options: RunOptions | None = Non
 
 def run_target_python(target_version, options: RunOptions | None = None):
     options = options or RunOptions()
-    version_label = VERSION_TARGETS.get(target_version, f"PY-{target_version}")
-    command = ["uv", "run", "--no-project", "--python", target_version, "python"]
+    version_label = VERSION_TARGETS.get(
+        target_version, f"PY-{target_version}"
+    )
+    command = [
+        "uv", "run", "--no-project", "--python", target_version, "python",
+    ]
     command_text = " ".join(command)
     run_time = datetime.now().isoformat(timespec="seconds")
 
@@ -132,9 +144,16 @@ def run_target_python(target_version, options: RunOptions | None = None):
         probe = None
 
     if probe is None or probe.returncode != 0:
-        msg = "command not found" if probe is None else (probe.stderr or probe.stdout).strip()
+        msg = (
+            "command not found"
+            if probe is None
+            else (probe.stderr or probe.stdout).strip()
+        )
         print(f"  SKIPPED: {msg}")
-        return _summary_row(version_label, target_version, command_text, run_time, "SKIPPED", msg)
+        return _summary_row(
+            version_label, target_version, command_text,
+            run_time, "SKIPPED", msg,
+        )
 
     python_output = (probe.stdout or probe.stderr).strip()
     before = list_version_result_files()
@@ -142,9 +161,7 @@ def run_target_python(target_version, options: RunOptions | None = None):
 
     print(f"  Running: {' '.join(command + runner_args)}")
     print("-" * 40)
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-    env["PYTHONUTF8"] = "1"
+    sys.stdout.flush()
 
     completed = _run_subprocess(
         command + runner_args,
@@ -192,7 +209,7 @@ def _summary_row(
     run_status,
     error_message,
     python_output="",
-    return_code="",
+    return_code: int = 0,
     new_files=None,
 ):
     return {
@@ -209,7 +226,9 @@ def _summary_row(
     }
 
 
-def run_selected_target_pythons(target_versions, options: RunOptions | None = None):
+def run_selected_target_pythons(
+    target_versions, options: RunOptions | None = None
+):
     options = options or RunOptions()
     ensure_version_dirs()
     check_required_files()
@@ -218,6 +237,7 @@ def run_selected_target_pythons(target_versions, options: RunOptions | None = No
     print(f"Result directory: {VERSION_RESULTS_DIR}")
     print(f"Targets: {', '.join(target_versions)}")
     print("-" * 80)
+    sys.stdout.flush()  # 确保父进程输出先于子进程输出显示
 
     rows = [run_target_python(v, options) for v in target_versions]
     for _ in target_versions:

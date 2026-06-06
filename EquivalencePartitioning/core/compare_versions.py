@@ -58,7 +58,10 @@ def build_pivot_rows(version_to_rows):
             pivot[key][f"{label}_final"] = row.get("final_result", "")
             pivot[key][f"{label}_sha256"] = row.get("sha256", "")
 
-    return sorted(pivot.values(), key=lambda r: (r.get("case_group", ""), r.get("test_id", "")))
+    return sorted(
+        pivot.values(),
+        key=lambda r: (r.get("case_group", ""), r.get("test_id", "")),
+    )
 
 
 def cross_version_hash_consistent(pivot_row, labels):
@@ -85,26 +88,43 @@ def run_version_compare(output_dir=None):
         return None
 
     labels = sorted(latest.keys())
-    version_to_rows = {label: load_version_rows(path) for label, path in latest.items()}
+    version_to_rows = {
+        label: load_version_rows(path) for label, path in latest.items()
+    }
 
     pivot_rows = build_pivot_rows(version_to_rows)
     for row in pivot_rows:
-        row["hash_consistent_across_versions"] = cross_version_hash_consistent(row, labels)
+        row["hash_consistent_across_versions"] = (
+            cross_version_hash_consistent(row, labels)
+        )
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = output_dir / f"cross_version_pivot_{timestamp}.csv"
 
-    fieldnames = ["case_group", "test_id", "test_name", "hash_consistent_across_versions"]
+    fieldnames = [
+        "case_group", "test_id", "test_name",
+        "hash_consistent_across_versions",
+    ]
     for label in labels:
-        fieldnames.extend([f"{label}_status", f"{label}_final", f"{label}_sha256"])
+        fieldnames.extend([
+            f"{label}_status", f"{label}_final", f"{label}_sha256",
+        ])
 
     with out_path.open("w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer = csv.DictWriter(
+            f, fieldnames=fieldnames, extrasaction="ignore",
+        )
         writer.writeheader()
         writer.writerows(pivot_rows)
 
-    consistent = sum(1 for r in pivot_rows if r["hash_consistent_across_versions"] == "YES")
-    differing = sum(1 for r in pivot_rows if r["hash_consistent_across_versions"] == "NO")
+    consistent = sum(
+        1 for r in pivot_rows
+        if r["hash_consistent_across_versions"] == "YES"
+    )
+    differing = sum(
+        1 for r in pivot_rows
+        if r["hash_consistent_across_versions"] == "NO"
+    )
 
     print("-" * 80)
     print("Cross-version pivot")

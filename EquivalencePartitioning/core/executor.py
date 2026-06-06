@@ -18,7 +18,10 @@ def short_repr(value, max_length=300):
     except RecursionError:
         return f"<repr failed: RecursionError; type={type(value).__name__}>"
     except Exception as exc:
-        return f"<repr failed: {type(exc).__name__}; type={type(value).__name__}>"
+        return (
+            f"<repr failed: {type(exc).__name__}; "
+            f"type={type(value).__name__}>"
+        )
 
     if len(text) > max_length:
         return text[:max_length] + "...<truncated>"
@@ -27,6 +30,7 @@ def short_repr(value, max_length=300):
 
 def _environment_fields():
     return {
+        "os_name": platform.system(),
         "python_version": platform.python_version(),
         "marshal_version": marshal.version,
         "machine": platform.machine(),
@@ -40,7 +44,7 @@ def _single_attempt(value):
         byte_stream = marshal.dumps(value)
         return {
             "status": "SUCCESS",
-            "sha256": byte_stream,
+            "sha256": calc_sha256(byte_stream),
             "size": len(byte_stream),
             "exception_type": "",
             "exception_message": "",
@@ -55,21 +59,22 @@ def _single_attempt(value):
         }
 
 
-def judge_final_result(attempts):
-    successes = [item for item in attempts if item["status"] == "SUCCESS"]
-    failures = [item for item in attempts if item["status"] == "EXCEPTION"]
+def judge_final_result(attempts, successes=None, failures=None):
+    if successes is None:
+        successes = [a for a in attempts if a["status"] == "SUCCESS"]
+    if failures is None:
+        failures = [a for a in attempts if a["status"] == "EXCEPTION"]
 
     if len(successes) == len(attempts):
-        hashes = {item["sha256"] for item in successes}
-        if len(hashes) == 1:
-            return "STABLE_SUCCESS"
-        return "UNSTABLE_HASH"
+        hashes = {a["sha256"] for a in successes}
+        return "STABLE_SUCCESS" if len(hashes) == 1 else "UNSTABLE_HASH"
 
     if len(failures) == len(attempts):
-        exc_types = {item["exception_type"] for item in failures}
-        if len(exc_types) == 1:
-            return "STABLE_EXCEPTION"
-        return "UNSTABLE_EXCEPTION"
+        exc_types = {a["exception_type"] for a in failures}
+        return (
+            "STABLE_EXCEPTION" if len(exc_types) == 1
+            else "UNSTABLE_EXCEPTION"
+        )
 
     return "UNSTABLE_MIXED"
 
@@ -83,17 +88,21 @@ def _status_from_final_result(final_result):
 
 
 def run_one_case(test_id, name, value, extra_fields=None, repeat_count=None):
-    repeat_count = repeat_count if repeat_count is not None else DEFAULT_REPEAT_COUNT
+    repeat_count = (
+        repeat_count if repeat_count is not None
+        else DEFAULT_REPEAT_COUNT
+    )
     if repeat_count < 1:
         raise ValueError(f"repeat_count must be >= 1, got {repeat_count}")
 
     attempts = [_single_attempt(value) for _ in range(repeat_count)]
-    successes = [item for item in attempts if item["status"] == "SUCCESS"]
-    failures = [item for item in attempts if item["status"] == "EXCEPTION"]
-    final_result = judge_final_result(attempts)
+    successes = [a for a in attempts if a["status"] == "SUCCESS"]
+    failures = [a for a in attempts if a["status"] == "EXCEPTION"]
+    final_result = judge_final_result(attempts, successes, failures)
     status = _status_from_final_result(final_result)
 
     result = {
+        "os_name": platform.system(),
         "test_id": test_id,
         "test_name": name,
         "input_repr": short_repr(value),
@@ -104,10 +113,10 @@ def run_one_case(test_id, name, value, extra_fields=None, repeat_count=None):
         "exception_message": "",
         "repeat_count": repeat_count,
         "final_result": final_result,
-        "success_runs": sum(1 for item in attempts if item["status"] == "SUCCESS"),
-        "exception_runs": sum(1 for item in attempts if item["status"] == "EXCEPTION"),
+        "success_runs": len(successes),
+        "exception_runs": len(failures),
         "unique_sha256_count": len(
-            {item["sha256"] for item in attempts if item["sha256"]}
+            {a["sha256"] for a in attempts if a["sha256"]}
         ),
     }
 
@@ -126,7 +135,9 @@ def run_one_case(test_id, name, value, extra_fields=None, repeat_count=None):
         sample = successes[0]
         result["sha256"] = sample["sha256"]
         result["size"] = sample["size"]
-        result["exception_type"] = failures[0]["exception_type"] if failures else ""
+        result["exception_type"] = (
+            failures[0]["exception_type"] if failures else ""
+        )
         result["exception_message"] = (
             failures[0]["exception_message"] if failures else ""
         )

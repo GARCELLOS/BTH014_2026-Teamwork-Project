@@ -1,25 +1,41 @@
 """构造复杂测试输入的辅助函数。"""
 
 
-def make_nested_list(depth):
+def make_nested(container_type, depth):
+    """Build a deeply nested container of the given type.
+
+    Args:
+        container_type: list, tuple, or dict.
+        depth: Nesting depth (>= 0).
+
+    Returns:
+        A nested structure of the requested depth.
+    """
     value = 1
-    for _ in range(depth):
-        value = [value]
+    if container_type is list:
+        for _ in range(depth):
+            value = [value]
+    elif container_type is tuple:
+        for _ in range(depth):
+            value = (value,)
+    elif container_type is dict:
+        for i in range(depth):
+            value = {f"level_{i}": value}
+    else:
+        raise TypeError(f"Unsupported container type: {container_type}")
     return value
+
+
+def make_nested_list(depth):
+    return make_nested(list, depth)
 
 
 def make_nested_tuple(depth):
-    value = 1
-    for _ in range(depth):
-        value = (value,)
-    return value
+    return make_nested(tuple, depth)
 
 
 def make_nested_dict(depth):
-    value = 1
-    for i in range(depth):
-        value = {f"level_{i}": value}
-    return value
+    return make_nested(dict, depth)
 
 
 def make_mixed_structure(size):

@@ -4,63 +4,42 @@ from cases.complexity import get_complexity_cases
 from cases.container import get_container_type_cases
 from cases.structure import get_cycle_cases, get_nested_cases
 
+CASE_GROUPS = {
+    "basic": {
+        "getter": get_basic_type_cases,
+        "title": "basic type",
+        "result_prefix": "basic_type",
+    },
+    "container": {
+        "getter": get_container_type_cases,
+        "title": "container type",
+        "result_prefix": "container_type",
+    },
+    "complexity": {
+        "getter": get_complexity_cases,
+        "title": "complexity",
+        "result_prefix": "complexity",
+    },
+    "code": {
+        "getter": get_code_cases,
+        "title": "code object",
+        "result_prefix": "code",
+    },
+    "nested": {
+        "getter": get_nested_cases,
+        "title": "nested structure",
+        "result_prefix": "nested",
+    },
+    "cycle": {
+        "getter": get_cycle_cases,
+        "title": "circular reference",
+        "result_prefix": "cycle",
+    },
+}
 
-def _group(getter, key, title, result_prefix, finish_message):
-    return key, {
-        "getter": getter,
-        "title": title,
-        "result_prefix": result_prefix,
-        "finish_message": finish_message,
-    }
-
-
-_CASE_SPECS = [
-    _group(
-        get_basic_type_cases,
-        "basic",
-        "basic type",
-        "basic_type",
-        "Basic type marshal tests finished.",
-    ),
-    _group(
-        get_container_type_cases,
-        "container",
-        "container type",
-        "container_type",
-        "Container type marshal tests finished.",
-    ),
-    _group(
-        get_complexity_cases,
-        "complexity",
-        "complexity",
-        "complexity",
-        "Complexity marshal tests finished.",
-    ),
-    _group(
-        get_code_cases,
-        "code",
-        "code object",
-        "code",
-        "Code object marshal tests finished.",
-    ),
-    _group(
-        get_nested_cases,
-        "nested",
-        "nested structure",
-        "nested",
-        "Nested structure marshal tests finished.",
-    ),
-    _group(
-        get_cycle_cases,
-        "cycle",
-        "circular reference",
-        "cycle",
-        "Circular reference marshal tests finished.",
-    ),
-]
-
-CASE_GROUPS = dict(_CASE_SPECS)
-CASE_GROUP_ORDER = tuple(key for key, _ in _CASE_SPECS)
+CASE_GROUP_ORDER = (
+    "basic", "container", "complexity", "code", "nested", "cycle",
+)
 
 
 def iter_case_groups():
@@ -71,7 +50,10 @@ def iter_case_groups():
 
 def count_cases():
     """返回各组用例数量与总数。"""
-    per_group = {key: len(group["getter"]()) for key, group in CASE_GROUPS.items()}
+    per_group = {
+        key: len(group["getter"]())
+        for key, group in CASE_GROUPS.items()
+    }
     return per_group, sum(per_group.values())
 
 

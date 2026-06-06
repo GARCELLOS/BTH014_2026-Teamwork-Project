@@ -50,7 +50,6 @@ def run_and_save_group(
     cases,
     title,
     result_prefix,
-    finish_message,
     group_key=None,
     options: RunOptions | None = None,
 ):
@@ -77,7 +76,7 @@ def run_and_save_group(
 
     save_results(results, result_prefix)
     print("-" * 80)
-    print(finish_message)
+    print(f"{title.capitalize()} marshal tests finished.")
     print_result_summary(results, title=f"Summary ({title})")
     return results
 
@@ -85,13 +84,14 @@ def run_and_save_group(
 def run_registered_group(group_key, options: RunOptions | None = None):
     if group_key not in CASE_GROUPS:
         known = ", ".join(sorted(CASE_GROUPS))
-        raise KeyError(f"Unknown case group '{group_key}'. Known groups: {known}")
+        raise KeyError(
+            f"Unknown case group '{group_key}'. Known groups: {known}"
+        )
     group = CASE_GROUPS[group_key]
     return run_and_save_group(
         cases=group["getter"](),
         title=group["title"],
         result_prefix=group["result_prefix"],
-        finish_message=group["finish_message"],
         group_key=group_key,
         options=options,
     )
