@@ -7,7 +7,9 @@ import sys
 
 # 确保 Windows 下中文路径能正确显示
 try:
-    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(  # pyright: ignore[reportAttributeAccessIssue]
+        encoding="utf-8",
+    )
 except Exception:
     pass
 
@@ -83,7 +85,10 @@ def build_parser():
         help="uv 切换 3.10–3.14 跑版本对比（不是 --all-groups）",
     )
     parser.add_argument(
-        "--target", nargs="+", metavar="VER", help="指定 Python 版本"
+        "--target",
+        nargs="+",
+        metavar="VER",
+        help="指定 Python 版本",
     )
     parser.add_argument("--version-label", default="CURRENT", help="结果中的版本标签")
     parser.add_argument(
@@ -136,7 +141,8 @@ def main():
             return
         if args.all:
             run_selected_target_pythons(
-                list(VERSION_TARGETS.keys()), options=options
+                list(VERSION_TARGETS.keys()),
+                options=options,
             )
             return
         parser.error("版本模式请指定 --current、--target 或 --all")
