@@ -1,4 +1,35 @@
 import sys
+import types
+
+
+TEST_FILENAME = "<test>"
+
+
+def _find_code_object(code_obj, code_name):
+    """Recursively find a nested code object by co_name."""
+    for const in code_obj.co_consts:
+        if not isinstance(const, types.CodeType):
+            continue
+
+        if const.co_name == code_name:
+            return const
+
+        nested = _find_code_object(const, code_name)
+        if nested is not None:
+            return nested
+
+    return None
+
+
+def _get_code_object(source, code_name, mode="exec"):
+    """Compile source and return the target code object."""
+    module_code = compile(source, TEST_FILENAME, mode)
+    code_obj = _find_code_object(module_code, code_name)
+
+    if code_obj is None:
+        raise ValueError(f"code object {code_name!r} not found")
+
+    return code_obj
 
 
 def get_code_cases():
@@ -9,7 +40,7 @@ def get_code_cases():
             "EQ-code-099",
             "code: def f(): pass, "
             "SHA-256 consistent after 10 serializations",
-            compile("def f(): pass", "<test>", "exec").co_consts[0],
+            _get_code_object("def f(): pass", "f"),
         )
     )
 
@@ -18,9 +49,10 @@ def get_code_cases():
             "EQ-code-100",
             "code: def f(x): return x, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def f(x): return x", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(x): return x",
+                "f",
+            ),
         )
     )
 
@@ -29,9 +61,10 @@ def get_code_cases():
             "EQ-code-101",
             "code: def f(a, b=1): return a+b, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def f(a, b=1): return a+b", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(a, b=1): return a+b",
+                "f",
+            ),
         )
     )
 
@@ -40,9 +73,10 @@ def get_code_cases():
             "EQ-code-102",
             "code: def f(*args): return args, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def f(*args): return args", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(*args): return args",
+                "f",
+            ),
         )
     )
 
@@ -51,9 +85,10 @@ def get_code_cases():
             "EQ-code-103",
             "code: def f(**kw): return kw, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def f(**kw): return kw", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(**kw): return kw",
+                "f",
+            ),
         )
     )
 
@@ -62,10 +97,10 @@ def get_code_cases():
             "EQ-code-104",
             "code: def f(a, b=2, *args, c=3, **kw), "
             "SHA-256 consistent after 10 serializations",
-            compile(
+            _get_code_object(
                 "def f(a, b=2, *args, c=3, **kw): pass",
-                "<test>", "exec",
-            ).co_consts[0],
+                "f",
+            ),
         )
     )
 
@@ -74,9 +109,10 @@ def get_code_cases():
             "EQ-code-105",
             "code: def f(a, *, b, c=4), "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def f(a, *, b, c=4): pass", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(a, *, b, c=4): pass",
+                "f",
+            ),
         )
     )
 
@@ -85,17 +121,12 @@ def get_code_cases():
             "EQ-code-106",
             "code: closure inner(y): return x+y, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                (
-                    "def outer(x):\n"
-                    "    def inner(y): return x+y\n"
-                    "    return inner"
-                ),
-                "<test>",
-                "exec",
-            )
-            .co_consts[0]
-            .co_consts[0],
+            _get_code_object(
+                "def outer(x):\n"
+                "    def inner(y): return x+y\n"
+                "    return inner",
+                "inner",
+            ),
         )
     )
 
@@ -104,10 +135,10 @@ def get_code_cases():
             "EQ-code-107",
             "code: generator yield i, "
             "SHA-256 consistent after 10 serializations",
-            compile(
+            _get_code_object(
                 "def gen(n):\n    for i in range(n): yield i",
-                "<test>", "exec",
-            ).co_consts[0],
+                "gen",
+            ),
         )
     )
 
@@ -117,9 +148,10 @@ def get_code_cases():
                 "EQ-code-108",
                 "code: async def foo(): return 1, "
                 "SHA-256 consistent after 10 serializations",
-                compile(
-                    "async def foo(): return 1", "<test>", "exec",
-                ).co_consts[0],
+                _get_code_object(
+                    "async def foo(): return 1",
+                    "foo",
+                ),
             )
         )
 
@@ -128,10 +160,10 @@ def get_code_cases():
             "EQ-code-109",
             "code: def f(a:int, b:str='ok') -> bool, "
             "SHA-256 consistent after 10 serializations",
-            compile(
+            _get_code_object(
                 "def f(a: int, b: str = 'ok') -> bool: return True",
-                "<test>", "exec",
-            ).co_consts[0],
+                "f",
+            ),
         )
     )
 
@@ -140,7 +172,11 @@ def get_code_cases():
             "EQ-code-110",
             "code: lambda x, y=2: x*y, "
             "SHA-256 consistent after 10 serializations",
-            compile("lambda x, y=2: x * y", "<test>", "eval"),
+            _get_code_object(
+                "lambda x, y=2: x * y",
+                "<lambda>",
+                mode="eval",
+            ),
         )
     )
 
@@ -151,7 +187,7 @@ def get_code_cases():
             "SHA-256 consistent after 10 serializations",
             compile(
                 "x = 1\nif x > 0:\n    y = 1\nelse:\n    y = -1",
-                "<test>",
+                TEST_FILENAME,
                 "exec",
             ),
         )
@@ -164,7 +200,8 @@ def get_code_cases():
             "SHA-256 consistent after 10 serializations",
             compile(
                 "s = 0\nfor i in range(10):\n    s += i",
-                "<test>", "exec",
+                TEST_FILENAME,
+                "exec",
             ),
         )
     )
@@ -174,20 +211,17 @@ def get_code_cases():
             "EQ-code-113",
             "code: complex control flow, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                (
-                    "def f(x):\n"
-                    "    if x>0:\n"
-                    "        for i in range(x):\n"
-                    "            try:\n"
-                    "                _=10/i\n"
-                    "            except ZeroDivisionError:\n"
-                    "                pass\n"
-                    "    return x"
-                ),
-                "<test>",
-                "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def f(x):\n"
+                "    if x>0:\n"
+                "        for i in range(x):\n"
+                "            try:\n"
+                "                _=10/i\n"
+                "            except ZeroDivisionError:\n"
+                "                pass\n"
+                "    return x",
+                "f",
+            ),
         )
     )
 
@@ -196,7 +230,7 @@ def get_code_cases():
             "EQ-code-114",
             "code: eval 1+2, "
             "SHA-256 consistent after 10 serializations",
-            compile("1 + 2", "<test>", "eval"),
+            compile("1 + 2", TEST_FILENAME, "eval"),
         )
     )
 
@@ -206,7 +240,9 @@ def get_code_cases():
             "code: multiline statements, "
             "SHA-256 consistent after 10 serializations",
             compile(
-                "x = 1\ny = x + 2", "<test>", "exec",
+                "x = 1\ny = x + 2",
+                TEST_FILENAME,
+                "exec",
             ),
         )
     )
@@ -217,13 +253,11 @@ def get_code_cases():
             "code: try/except block, "
             "SHA-256 consistent after 10 serializations",
             compile(
-                (
-                    "try:\n"
-                    "    x = 1/0\n"
-                    "except ZeroDivisionError:\n"
-                    "    x = 0"
-                ),
-                "<test>",
+                "try:\n"
+                "    x = 1/0\n"
+                "except ZeroDivisionError:\n"
+                "    x = 0",
+                TEST_FILENAME,
                 "exec",
             ),
         )
@@ -236,7 +270,8 @@ def get_code_cases():
             "SHA-256 consistent after 10 serializations",
             compile(
                 "class A:\n    def method(self): return 1",
-                "<test>", "exec",
+                TEST_FILENAME,
+                "exec",
             ),
         )
     )
@@ -246,7 +281,7 @@ def get_code_cases():
             "EQ-code-118",
             "code: unicode source x='中文😀', "
             "SHA-256 consistent after 10 serializations",
-            compile("x = '中文😀'", "<test>", "exec"),
+            compile("x = '中文😀'", TEST_FILENAME, "exec"),
         )
     )
 
@@ -255,14 +290,17 @@ def get_code_cases():
             "EQ-code-119",
             "code: def empty(): pass, "
             "SHA-256 consistent after 10 serializations",
-            compile(
-                "def empty(): pass", "<test>", "exec",
-            ).co_consts[0],
+            _get_code_object(
+                "def empty(): pass",
+                "empty",
+            ),
         )
     )
 
     code_consts = compile(
-        "x = (None, True, 123, 3.14, 'abc')", "<test>", "exec",
+        "x = (None, True, 123, 3.14, 'abc')",
+        TEST_FILENAME,
+        "exec",
     )
     cases.append(
         (
