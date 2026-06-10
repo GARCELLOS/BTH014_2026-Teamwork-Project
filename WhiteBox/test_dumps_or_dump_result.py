@@ -78,6 +78,20 @@ class TestLinuxAndWindows(unittest.TestCase):
             data0 = file.read()
         self.assertEqual(data5, data0)
 
+    def test_dumps_ascii_marshal0and5(self):
+        """Test ascii dumps result in marshal5 and 0"""
+        value = "Hello World"
+        data0 = marshal.dumps(value, 0)
+        data5 = marshal.dumps(value, 5)
+        self.assertEqual(data0, data5)
+
+    def test_dumps_ascii_interned_marshal0and3(self):
+        """Test interned ascii dumps result in marshal3 and 0"""
+        value = "Hello World"
+        data0 = marshal.dumps(value, 0)
+        data3 = marshal.dumps(value, 3)
+        self.assertEqual(data0, data3)
+
     def test_dumps_smalltuple_marshal0and5(self):
         """Test small tuple dumps result in marshal5 and 0"""
         value = (1, 5, 6, 7, 9)
