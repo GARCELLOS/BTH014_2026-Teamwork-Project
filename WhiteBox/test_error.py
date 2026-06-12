@@ -20,7 +20,7 @@ class TestError(unittest.TestCase):
         """Test slice exception in marshal0"""
         value = slice(1, 9, 2)
         with self.assertRaises(ValueError):
-            marshal.dump(value, 0)
+            marshal.dumps(value, 0)
 
 
 if __name__ == "__main__":
